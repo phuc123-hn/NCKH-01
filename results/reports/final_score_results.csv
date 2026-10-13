@@ -1,0 +1,2 @@
+method,f1,auc,fpr,fnr,threshold
+XGBoost (tau* step4),0.9682034172480032,0.99378862955,0.02055,0.04235,0.627

@@ -1,0 +1,4 @@
+model,inference_ms
+LightGBM,6.36
+XGBoost,0.677
+RandomForest,36.539

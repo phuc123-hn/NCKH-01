@@ -1,0 +1,6 @@
+evidence,features,shap_importance,shap_rank,ev_mean_malware,weight
+tls_evidence,[2359],0.51024,1,0.4919,0.25
+header_evidence,"[637, 626]",0.38396,2,0.1085,0.25
+packing_evidence,"[503, 691]",0.22016,4,0.2734,0.25
+import_evidence,[2364],0.15243,7,0.4858,0.15
+loadcfg_evidence,[2360],0.08145,19,0.5262,0.1

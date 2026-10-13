@@ -1,0 +1,97 @@
+=======================================================
+STEP 5: SHAP Analysis + Composite Malware Score
+=======================================================
+Log: results\reports\step5_output.txt
+
+[OK] shap 0.52.0
+Load data...
+  SHAP sample: (1000, 2381)
+  Malware: 500 | Benign: 500
+
+Load models...
+  [OK] LightGBM
+  [OK] XGBoost
+  [OK] RandomForest
+
+=======================================================
+PHAN 1: Tinh SHAP values
+=======================================================
+
+  LightGBM: tinh SHAP tren 1000 mau...
+    SHAP shape: (1000, 2381)
+    Top 5 features: [637, 2359, 691, 655, 2355]
+    [SAVED] shap_summary_lightgbm.png
+    [SAVED] shap_waterfall_lightgbm_malware.png
+    [SAVED] shap_waterfall_lightgbm_benign.png
+
+  XGBoost: tinh SHAP tren 1000 mau...
+    SHAP shape: (1000, 2381)
+    Top 5 features: [637, 2359, 691, 626, 2355]
+    [SAVED] shap_summary_xgboost.png
+    [SAVED] shap_waterfall_xgboost_malware.png
+    [SAVED] shap_waterfall_xgboost_benign.png
+
+  RandomForest: tinh SHAP tren 1000 mau...
+    SHAP shape: (1000, 2381)
+    Top 5 features: [2359, 2360, 637, 2364, 613]
+    [SAVED] shap_summary_randomforest.png
+    [SAVED] shap_waterfall_randomforest_malware.png
+    [SAVED] shap_waterfall_randomforest_benign.png
+
+  [SAVED] shap_values_xgb.npy
+  [SAVED] shap_top_features.csv
+
+  Features overlap trong top-20 cua ca 3 model: 6
+  Indices: [503, 637, 1060, 2359, 2360, 2364]
+    [SAVED] shap_overlap_features.png
+
+=======================================================
+PHAN 2: Composite Malware Score (CMS)
+=======================================================
+
+  Xay CMS tu top-20 SHAP features cua XGBoost...
+    CMS (LR, 20 features): F1=0.7708  AUC=0.8532
+  XGBoost full (2381 feat): F1=0.9642 AUC=0.9951
+  [SAVED] cms_results.csv
+  [SAVED] cms_config.json
+
+  Plots:
+    [SAVED] cms_comparison.png
+
+=======================================================
+TOM TAT STEP 5
+=======================================================
+
+Top-10 features quan trong nhat (overlap 3 model):
+  feat_503:
+    LightGBM        rank= 18  mean_shap=0.09472
+    XGBoost         rank= 15  mean_shap=0.09614
+    RandomForest    rank= 19  mean_shap=0.00540
+  feat_637:
+    LightGBM        rank=  1  mean_shap=0.62252
+    XGBoost         rank=  1  mean_shap=0.54131
+    RandomForest    rank=  3  mean_shap=0.01137
+  feat_1060:
+    LightGBM        rank= 13  mean_shap=0.10617
+    XGBoost         rank= 19  mean_shap=0.08360
+    RandomForest    rank= 20  mean_shap=0.00534
+  feat_2359:
+    LightGBM        rank=  2  mean_shap=0.56245
+    XGBoost         rank=  2  mean_shap=0.53169
+    RandomForest    rank=  1  mean_shap=0.02030
+  feat_2360:
+    LightGBM        rank= 16  mean_shap=0.09633
+    XGBoost         rank= 18  mean_shap=0.08463
+    RandomForest    rank=  2  mean_shap=0.01282
+  feat_2364:
+    LightGBM        rank=  9  mean_shap=0.16423
+    XGBoost         rank=  9  mean_shap=0.14422
+    RandomForest    rank=  4  mean_shap=0.00885
+
+CMS vs Full XGBoost:
+  Full (2381 feat): F1=0.9642  AUC=0.9951
+  CMS  (  20 feat): F1=0.7708  AUC=0.8532
+  -> Full model tot hon 0.1934 F1 — CMS la approximation hop ly
+
+[XONG] Tat ca luu trong results/
+Buoc tiep theo: xay dung web/

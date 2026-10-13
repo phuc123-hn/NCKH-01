@@ -1,0 +1,4 @@
+model,cv_f1_mean,cv_f1_std,cv_auc_mean,cv_auc_std,time_min
+LightGBM,0.9755,0.0005,0.9972,0.0001,28.3
+XGBoost,0.976,0.0007,0.9972,0.0001,65.6
+RandomForest,0.9558,0.0005,0.9933,0.0001,48.2

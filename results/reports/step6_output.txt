@@ -1,0 +1,201 @@
+=======================================================
+STEP 6: Evidence Aggregation Framework
+ML quyết định — Evidence giải thích
+=======================================================
+Log: results\reports\step6_output.txt
+
+Load data...
+  X_test: (200000, 2381) | X_val: (90000, 2381)
+
+Load models...
+  [OK] LightGBM
+  [OK] XGBoost
+  [OK] RandomForest
+
+=======================================================
+ROBUSTNESS TEST — F1 theo Gaussian Noise
+Mục đích: đo ML model có bền với malware biến thể không
+=======================================================
+
+  LightGBM:
+    sigma=0.0: F1=0.9662
+    sigma=0.1: F1=0.5122
+    sigma=0.5: F1=0.3426
+    sigma=1.0: F1=0.3046
+    sigma=1.5: F1=0.3080
+    sigma=2.0: F1=0.3156
+    Drop tại sigma=2.0: 67.34%
+
+  XGBoost:
+    sigma=0.0: F1=0.9663
+    sigma=0.1: F1=0.5535
+    sigma=0.5: F1=0.4524
+    sigma=1.0: F1=0.4528
+    sigma=1.5: F1=0.4702
+    sigma=2.0: F1=0.4856
+    Drop tại sigma=2.0: 49.75%
+
+  RandomForest:
+    sigma=0.0: F1=0.9396
+    sigma=0.1: F1=0.8129
+    sigma=0.5: F1=0.5662
+    sigma=1.0: F1=0.3786
+    sigma=1.5: F1=0.2744
+    sigma=2.0: F1=0.2229
+    Drop tại sigma=2.0: 76.28%
+
+  [SAVED] robustness_results.csv
+  [SAVED] robustness_curve.png
+
+=======================================================
+SHAP STABILITY SCORE (XGBoost)
+=======================================================
+
+  SHAP Stability: 5 subsets × 200 mẫu...
+    Subset 1/5 done
+    Subset 2/5 done
+    Subset 3/5 done
+    Subset 4/5 done
+    Subset 5/5 done
+  [SAVED] shap_stability.csv
+
+  Top-10 theo mean |SHAP|:
+  Feature      Mean|SHAP|  Stability     Status
+  ------------------------------------------------
+  feat_637        0.51446     0.9375     STABLE
+  feat_2359       0.51024     0.9403     STABLE
+  feat_691        0.34522     0.9558     STABLE
+  feat_626        0.25346     0.9737     STABLE
+  feat_2355       0.18230     0.9544     STABLE
+  feat_655        0.16226     0.8945     STABLE
+  feat_930        0.15665     0.9568     STABLE
+  feat_2364       0.15243     0.9769     STABLE
+  feat_615        0.14845     0.9724     STABLE
+  feat_683        0.12998     0.9031     STABLE
+  [SAVED] shap_stability.png
+
+=======================================================
+EVIDENCE EXTRACTION
+=======================================================
+
+  Evidence                Malware mean  Benign mean
+  --------------------------------------------------
+  packing_evidence              0.2734       0.1534  Δ=+0.1199
+  tls_evidence                  0.4919       0.4919  Δ=+0.0000
+  import_evidence               0.4858       0.4922  Δ=-0.0064
+  header_evidence               0.1085       0.1119  Δ=-0.0034
+  loadcfg_evidence              0.5262       0.4965  Δ=+0.0297
+  [SAVED] evidence_results.csv
+
+  Calibration check (Δ > 0.05 = phân biệt được):
+    packing_evidence      : Δ=+0.1199  [OK  ]
+    tls_evidence          : Δ=+0.0000  [WEAK]  <-- SHAP sẽ là giải thích chính trên web
+    import_evidence       : Δ=-0.0064  [WEAK]  <-- SHAP sẽ là giải thích chính trên web
+    header_evidence       : Δ=-0.0034  [WEAK]  <-- SHAP sẽ là giải thích chính trên web
+    loadcfg_evidence      : Δ=+0.0297  [WEAK]  <-- SHAP sẽ là giải thích chính trên web
+
+  [WARN] Evidence yếu vẫn hiển thị nhưng web sẽ ưu tiên SHAP explain.
+
+=======================================================
+EVIDENCE ALIGNMENT — Kiểm tra độ nhất quán với SHAP
+=======================================================
+  packing_evidence      : SHAP rank=   4  EV(mal)=0.273  SHAP_imp=0.22016
+  tls_evidence          : SHAP rank=   1  EV(mal)=0.492  SHAP_imp=0.51024
+  import_evidence       : SHAP rank=   7  EV(mal)=0.486  SHAP_imp=0.15243
+  header_evidence       : SHAP rank=   2  EV(mal)=0.108  SHAP_imp=0.38396
+  loadcfg_evidence      : SHAP rank=  19  EV(mal)=0.526  SHAP_imp=0.08145
+  [SAVED] evidence_alignment.csv
+
+=======================================================
+ML MODEL EVALUATION  (tham chiếu step 4)
+=======================================================
+  XGBoost (tau* step4)        : F1=0.9682  AUC=0.9938  FPR=0.0205  FNR=0.0423
+  [SAVED] final_score_results.csv
+
+=======================================================
+SAMPLE OUTPUT (3 malware mẫu đầu tiên)
+Đây là output mà web API sẽ trả về
+=======================================================
+
+  Sample 0:
+    verdict     : MALWARE
+    confidence  : 0.9998
+    evidence    :
+      packing_evidence      : 0.6935
+      tls_evidence          : 0.4918
+      import_evidence       : 0.4838
+      header_evidence       : 0.1035
+      loadcfg_evidence      : 0.5278
+    dominant    : packing_evidence (Entropy cao + nhiều RX section → file bị packed/encrypted)
+    shap top 5  :
+      feat_691    : +0.9424
+      feat_801    : +0.6280
+      feat_605    : +0.4228
+      feat_637    : +0.3950
+      feat_930    : +0.3223
+
+  Sample 2:
+    verdict     : MALWARE
+    confidence  : 0.9979
+    evidence    :
+      packing_evidence      : 0.2222
+      tls_evidence          : 0.4918
+      import_evidence       : 0.4838
+      header_evidence       : 0.1189
+      loadcfg_evidence      : 0.5278
+    dominant    : loadcfg_evidence (Load Config vắng mặt → thiếu security compilation flags)
+    shap top 5  :
+      feat_691    : +1.0171
+      feat_994    : +0.5659
+      feat_930    : +0.5081
+      feat_626    : -0.4573
+      feat_2359   : +0.2908
+
+  Sample 5:
+    verdict     : MALWARE
+    confidence  : 0.9994
+    evidence    :
+      packing_evidence      : 0.6397
+      tls_evidence          : 0.4918
+      import_evidence       : 0.4838
+      header_evidence       : 0.1052
+      loadcfg_evidence      : 0.5278
+    dominant    : packing_evidence (Entropy cao + nhiều RX section → file bị packed/encrypted)
+    shap top 5  :
+      feat_691    : +0.8210
+      feat_2355   : +0.8142
+      feat_798    : +0.7029
+      feat_637    : +0.3896
+      feat_2359   : +0.3318
+
+Plots...
+  [SAVED] evidence_radar.png
+  [SAVED] evidence_config.json
+
+=======================================================
+TÓM TẮT STEP 6
+=======================================================
+
+Robustness drop tại sigma=2.0:
+  LightGBM       : F1_baseline=0.9662  drop=67.34%
+  XGBoost        : F1_baseline=0.9663  drop=49.75%
+  RandomForest   : F1_baseline=0.9396  drop=76.28%
+
+Evidence Alignment (SHAP rank thấp = quan trọng hơn):
+  tls_evidence          : SHAP rank=   1  EV(mal)=0.492
+  header_evidence       : SHAP rank=   2  EV(mal)=0.108
+  packing_evidence      : SHAP rank=   4  EV(mal)=0.273
+  import_evidence       : SHAP rank=   7  EV(mal)=0.486
+  loadcfg_evidence      : SHAP rank=  19  EV(mal)=0.526
+
+ML Decision threshold (tau*): 0.627
+ML F1 trên test set: 0.9682
+ML AUC trên test set: 0.9938
+
+Kiến trúc output web API:
+  verdict     ← ML >= tau_star  (quyết định)
+  confidence  ← ML score        (tin cậy)
+  evidence    ← 5 giá trị       (giải thích ngữ nghĩa)
+  shap_top    ← top features    (giải thích kỹ thuật)
+
+[XONG] Bước tiếp: xây dựng web/ API dùng evidence_config.json

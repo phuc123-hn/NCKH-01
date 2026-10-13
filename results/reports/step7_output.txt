@@ -1,0 +1,133 @@
+=======================================================
+STEP 7: Import Pattern Evidence Engine
+=======================================================
+Log: results\reports\step7_output.txt
+
+Import Pattern Dictionary:
+  Category                    Weight  #APIs  MITRE
+  -------------------------------------------------------
+  process_injection             0.95      7  T1055
+  keylogger                     0.90      3  T1056.001
+  network_download              0.85      6  T1105
+  anti_analysis                 0.80      3  T1622
+  persistence_service           0.75      4  T1543.003
+  persistence_registry          0.45      2  T1547.001
+  crypto_ransomware             0.80      5  T1486
+  socket_raw                    0.65      4  T1095
+
+=======================================================
+ĐÁNH GIÁ TRÊN EMBER DATASET (5000 mẫu)
+=======================================================
+
+  Đọc 5000 mẫu từ EMBER JSONL...
+  Đọc từ 5 file (bỏ file 0 toàn unlabeled)...
+  Đọc được: 5000 mẫu (malware=2596, benign=2404)
+
+  Import Pattern Score:
+    Malware mean : 0.3571
+    Benign  mean : 0.1886
+    Δ            : +0.1685  (OK >0.05)
+
+  Coverage (có suspicious APIs):
+    Malware : 45.1%
+    Benign  : 24.3%
+
+  Top threat categories trong malware:
+    crypto_ransomware        :   319 (12.3%)
+    network_download         :   296 (11.4%)
+    persistence_registry     :   260 (10.0%)
+    process_injection        :   157 (6.0%)
+    keylogger                :    97 (3.7%)
+  [SAVED] import_pattern_results.csv
+  [SAVED] import_pattern_coverage.png
+
+  Calibration so với Evidence step 6:
+    Evidence tls_evidence Δ     = +0.0000  [WEAK]
+    Import Pattern Score  Δ     = +0.1685  [OK]
+    → Import Pattern TỐTHƠN tls_evidence
+      Giải thích API cụ thể có discriminative value
+
+=======================================================
+TEST TRÊN WINDOWS SYSTEM FILES
+Kỳ vọng: system files có score thấp hoặc trung bình
+=======================================================
+
+  alg.exe  (204.0 KB)
+    n_apis    : 147
+    ip_score  : 0.4500
+    categories: persistence_registry
+    hint      : Registry modification — ghi vào registry (cần context thêm)
+
+  calc.exe  (48.0 KB)
+    n_apis    : 34
+    ip_score  : 0.0000
+    categories: none
+    hint      : Không phát hiện suspicious API pattern
+
+  notepad.exe  (352.0 KB)
+    n_apis    : 310
+    ip_score  : 0.4500
+    categories: persistence_registry
+    hint      : Registry modification — ghi vào registry (cần context thêm)
+
+  AggregatorHost.exe  (308.0 KB)
+    n_apis    : 196
+    ip_score  : 0.8500
+    categories: anti_analysis, persistence_registry
+    hint      : Anti-analysis — kiểm tra debugger/sandbox chủ động + persistence_registry
+
+  agentactivationruntimestarter.exe  (40.0 KB)
+    n_apis    : 48
+    ip_score  : 0.0000
+    categories: none
+    hint      : Không phát hiện suspicious API pattern
+
+=======================================================
+SAMPLE: Full output cho web API (step 6 + step 7)
+=======================================================
+
+  verdict          : MALWARE
+  confidence       : 0.9998
+
+  evidence (step 6):
+    packing_evidence      : 0.6935
+    tls_evidence          : 0.4918
+    import_evidence       : 0.4902
+    header_evidence       : 0.1035
+    loadcfg_evidence      : 0.5278
+
+  import_pattern (step 7):
+    score          : 1.0
+    n_categories   : 2
+    threat_hint    : Process injection — chèn code vào process khác + persistence_registry
+    mitre          : T1055
+    hits           :
+      [process_injection] ['VirtualAllocEx', 'WriteProcessMemory', 'CreateRemoteThread']
+      [persistence_registry] ['RegSetValueExW']
+
+  [SAVED] import_pattern_config.json
+
+=======================================================
+TÓM TẮT STEP 7
+=======================================================
+
+Import Pattern Dictionary:
+  8 threat categories
+  34 APIs
+  8 MITRE ATT&CK techniques
+
+EMBER evaluation (5000 mẫu):
+  Import Pattern Δ = +0.1685
+  Coverage malware = 45.1%
+  Coverage benign  = 24.2%
+
+Kiến trúc web API (step 6 + step 7):
+  verdict         ← ML >= tau_star
+  confidence      ← ML score
+  evidence        ← 5 sigmoid values (step 6)
+  shap_top        ← per-sample SHAP (step 6)
+  import_pattern  ← lief API names + threat category (step 7)
+  threat_hint     ← human-readable description (step 7)
+
+[XONG] Bước tiếp: xây dựng web/ với Flask
+       Dùng import_pattern_config.json + evidence_config.json

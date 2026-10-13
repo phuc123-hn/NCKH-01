@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+body { background: transparent; color: #e2e8f0; padding: 16px; }
+
+.flow { display: flex; flex-direction: column; gap: 0; }
+
+.layer {
+  display: flex; align-items: stretch; gap: 0;
+  position: relative;
+}
+
+.layer-label {
+  width: 110px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 12px; font-size: 11px; font-weight: 600;
+  color: #64748b; text-align: right; line-height: 1.4;
+}
+
+.layer-content {
+  flex: 1; display: flex; gap: 8px; padding: 10px 0;
+}
+
+.box {
+  flex: 1; border-radius: 8px; padding: 10px 12px;
+  font-size: 12px; line-height: 1.5;
+  border: 1px solid #2d3148;
+}
+
+.box-title { font-weight: 700; margin-bottom: 4px; font-size: 12px; }
+.box-sub { font-size: 11px; color: #94a3b8; }
+
+.existing { background: #1a1d2e; }
+.new-box  { background: #1e2a1e; border-color: #1D9E75; }
+.core-box { background: #1a1f2e; border-color: #3B8BD4; }
+
+.new-tag {
+  display: inline-block; padding: 1px 6px; border-radius: 3px;
+  background: #14532d; color: #86efac; font-size: 10px; font-weight: 700;
+  margin-left: 6px; vertical-align: middle;
+}
+
+.arrow-row {
+  display: flex; justify-content: center;
+  padding: 2px 0 2px 110px;
+}
+.arrow { color: #2d3148; font-size: 18px; }
+
+.novelty-box {
+  margin-top: 16px; border-radius: 10px; padding: 14px 16px;
+  background: #12151f; border: 1px solid #3B8BD4;
+}
+.novelty-title { font-size: 13px; font-weight: 700; color: #3B8BD4; margin-bottom: 10px; }
+.novelty-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 6px 0; border-bottom: 1px solid #1a1d2e;
+}
+.novelty-item:last-child { border: none; }
+.n-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #3B8BD4; color: white; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.n-text { font-size: 12px; line-height: 1.5; }
+.n-text strong { color: #e2e8f0; }
+.n-text span { color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="flow">
+
+  <!-- Layer: Nền tảng cũ -->
+  <div class="layer">
+    <div class="layer-label">Nền tảng<br>literature</div>
+    <div class="layer-content">
+      <div class="box existing">
+        <div class="box-title">EMBER 2018 Features</div>
+        <div class="box-sub">2381 PE static features — Byte histogram, entropy, imports, sections, strings</div>
+      </div>
+      <div class="box existing">
+        <div class="box-title">XGBoost / LGB / RF</div>
+        <div class="box-sub">Gradient boosting đã dùng phổ biến từ 2018 — baseline của lĩnh vực</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="arrow">↓</div></div>
+
+  <!-- Layer: Step 4 -->
+  <div class="layer">
+    <div class="layer-label">Cải tiến<br>Step 4</div>
+    <div class="layer-content">
+      <div class="box core-box">
+        <div class="box-title">Youden's J Threshold<span class="new-tag">NEW</span></div>
+        <div class="box-sub">Tìm tau* tối ưu thay vì dùng 0.5 mặc định → giảm 43% FPR. Paper gốc không làm.</div>
+      </div>
+      <div class="box core-box">
+        <div class="box-title">FPR / FNR Analysis<span class="new-tag">NEW</span></div>
+        <div class="box-sub">Báo cáo đầy đủ FPR, FNR, trade-off — hầu hết paper chỉ báo F1/AUC.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="arrow">↓</div></div>
+
+  <!-- Layer: Step 5 -->
+  <div class="layer">
+    <div class="layer-label">Cải tiến<br>Step 5</div>
+    <div class="layer-content">
+      <div class="box new-box">
+        <div class="box-title">SHAP + Stability Score<span class="new-tag">NEW</span></div>
+        <div class="box-sub">Không chỉ tính mean |SHAP| — tính thêm variance qua nhiều subset → chọn feature ổn định thật sự.</div>
+      </div>
+      <div class="box new-box">
+        <div class="box-title">Composite Malware Score<span class="new-tag">NEW</span></div>
+        <div class="box-sub">CMS = weighted sum dùng stability-weighted SHAP features. So sánh F1(CMS) vs F1(full).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="arrow">↓</div></div>
+
+  <!-- Layer: Step 6 -->
+  <div class="layer">
+    <div class="layer-label">Cải tiến<br>Step 6</div>
+    <div class="layer-content">
+      <div class="box new-box">
+        <div class="box-title">Robustness Test<span class="new-tag">NEW</span></div>
+        <div class="box-sub">F1 theo noise σ=0.1→2.0. Mô phỏng malware biến thể. Model nào bền nhất?</div>
+      </div>
+      <div class="box new-box">
+        <div class="box-title">PE Anomaly Detection<span class="new-tag">NEW</span></div>
+        <div class="box-sub">Rule-based: entropy section, RWX, suspicious API, timestamp. Anomaly Score kết hợp ML.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="arrow">↓</div></div>
+
+  <!-- Layer: Web -->
+  <div class="layer">
+    <div class="layer-label">Sản phẩm<br>Web demo</div>
+    <div class="layer-content">
+      <div class="box core-box">
+        <div class="box-title">Upload PE → Chat log real-time<span class="new-tag">NEW</span></div>
+        <div class="box-sub">ML score + SHAP explain + PE anomaly flags + Anomaly Score. Giám khảo thấy từng bước xử lý.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Novelty summary -->
+<div class="novelty-box">
+  <div class="novelty-title">Điểm mới tổng hợp — trả lời câu hỏi reviewer sẽ hỏi</div>
+
+  <div class="novelty-item">
+    <div class="n-num">1</div>
+    <div class="n-text">
+      <strong>Youden's J threshold optimization:</strong>
+      <span> Giảm 43% FPR so với ngưỡng mặc định 0.5. Đề xuất cụ thể cho từng model. Paper gốc EMBER 2018 không làm.</span>
+    </div>
+  </div>
+
+  <div class="novelty-item">
+    <div class="n-num">2</div>
+    <div class="n-text">
+      <strong>SHAP Stability Score:</strong>
+      <span> Feature nào ổn định qua nhiều subset = ít bị domain shift ảnh hưởng. Cơ sở để xây CMS robustly.</span>
+    </div>
+  </div>
+
+  <div class="novelty-item">
+    <div class="n-num">3</div>
+    <div class="n-text">
+      <strong>Composite Malware Score (CMS):</strong>
+      <span> Công thức tổng hợp từ stability-weighted SHAP. Kiểm chứng có cải thiện F1 không — dù kết quả nào cũng có giá trị.</span>
+    </div>
+  </div>
+
+  <div class="novelty-item">
+    <div class="n-num">4</div>
+    <div class="n-text">
+      <strong>Robustness với domain shift:</strong>
+      <span> Test F1 theo noise level mô phỏng malware biến thể. Câu hỏi này chưa được trả lời trong paper EMBER gốc.</span>
+    </div>
+  </div>
+
+  <div class="novelty-item">
+    <div class="n-num">5</div>
+    <div class="n-text">
+      <strong>PE Anomaly + ML kết hợp:</strong>
+      <span> Không chỉ cho confidence score — còn giải thích tại sao file đáng ngờ bằng cấu trúc PE cụ thể. Hệ thống end-to-end có khả năng diễn giải.</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

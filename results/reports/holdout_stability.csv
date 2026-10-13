@@ -1,0 +1,4 @@
+model,f1_mean,f1_std,verdict
+LightGBM,0.9786,0.00036,ON DINH
+XGBoost,0.981,0.00023,ON DINH
+RandomForest,0.969,0.00037,ON DINH

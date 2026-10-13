@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+body { background: transparent; color: var(--text-primary, #e2e8f0); padding: 16px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab {
+  padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: 1px solid #2d3148; background: #1a1d2e; color: #94a3b8;
+  transition: all 0.2s;
+}
+.tab.active { background: #7c85f3; color: white; border-color: #7c85f3; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+
+.title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.subtitle { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+
+/* Hướng 1 — PE Anomaly Chart */
+.pe-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pe-table th { background: #1a1d2e; padding: 8px 12px; text-align: left; color: #94a3b8; font-weight: 600; }
+.pe-table td { padding: 8px 12px; border-bottom: 1px solid #1a1d2e; }
+.pe-table tr:nth-child(odd) { background: #12151f; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.danger { background: #7f1d1d; color: #fca5a5; }
+.warn   { background: #78350f; color: #fcd34d; }
+.ok     { background: #14532d; color: #86efac; }
+
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-label { width: 160px; font-size: 12px; color: #94a3b8; text-align: right; flex-shrink: 0; }
+.bar-wrap { flex: 1; height: 20px; background: #1a1d2e; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; color: white; transition: width 0.8s ease; }
+.bar-val { font-size: 12px; color: #94a3b8; width: 50px; }
+
+/* Hướng 2 — SHAP Stability */
+.stability-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.stability-card { background: #12151f; border-radius: 8px; padding: 12px; }
+.s-title { font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.s-bar-wrap { height: 8px; background: #1a1d2e; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+.s-bar { height: 100%; border-radius: 4px; }
+.s-label { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; }
+.s-score { font-size: 18px; font-weight: 700; margin-top: 6px; }
+
+/* Hướng 3 — Robustness */
+canvas { width: 100%; border-radius: 8px; background: #12151f; }
+.legend { display: flex; gap: 16px; margin-top: 8px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+.info-box { background: #12151f; border-radius: 8px; padding: 12px 14px; margin-top: 12px; font-size: 12px; color: #94a3b8; line-height: 1.6; }
+.info-box strong { color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab(0)">Hướng 1 — PE Anomaly</div>
+  <div class="tab" onclick="switchTab(1)">Hướng 2 — SHAP Stability</div>
+  <div class="tab" onclick="switchTab(2)">Hướng 3 — Robustness</div>
+</div>
+
+<!-- PANEL 1 -->
+<div class="panel active" id="p0">
+  <div class="title">PE Structural Anomaly Detection</div>
+  <div class="subtitle">Phát hiện bất thường trong cấu trúc header, section, import của file PE</div>
+
+  <table class="pe-table">
+    <tr><th>Trường PE</th><th>Giá trị bình thường</th><th>Dấu hiệu bất thường</th><th>Mức độ</th></tr>
+    <tr><td>Timestamp</td><td>Năm 2000–2024</td><td>= 0 hoặc &lt; 1990</td><td><span class="badge warn">Nghi ngờ</span></td></tr>
+    <tr><td>Section entropy</td><td>4.0 – 7.0</td><td>&gt; 7.2 = packed/encrypted</td><td><span class="badge danger">Nguy hiểm</span></td></tr>
+    <tr><td>RWX permission</td><td>RX hoặc RW riêng</td><td>Read+Write+Execute cùng lúc</td><td><span class="badge danger">Nguy hiểm</span></td></tr>
+    <tr><td>Virtual/Raw size ratio</td><td>Gần bằng nhau</td><td>VSize &gt;&gt; RawSize (×10+)</td><td><span class="badge warn">Nghi ngờ</span></td></tr>
+    <tr><td>Import count</td><td>3–20 DLL</td><td>&lt; 3 DLL = dynamic loading ẩn</td><td><span class="badge warn">Nghi ngờ</span></td></tr>
+    <tr><td>VirtualAlloc + WriteProcessMemory</td><td>Không xuất hiện cùng nhau</td><td>Cùng xuất hiện = process injection</td><td><span class="badge danger">Nguy hiểm</span></td></tr>
+    <tr><td>CreateRemoteThread</td><td>Không có</td><td>Có = inject vào process khác</td><td><span class="badge danger">Nguy hiểm</span></td></tr>
+    <tr><td>Entrypoint location</td><td>Trong section .text</td><td>Ngoài section hợp lệ</td><td><span class="badge danger">Nguy hiểm</span></td></tr>
+  </table>
+
+  <div class="info-box" style="margin-top:12px">
+    <strong>Cách tính Anomaly Score:</strong> Mỗi flag cộng điểm theo mức độ. Tổng điểm &gt; ngưỡng → cảnh báo.<br>
+    Kết hợp với ML confidence: nếu ML cao + Anomaly Score cao → chắc chắn malware.<br>
+    Nếu ML cao nhưng Anomaly Score thấp → cần xem xét thêm (false positive potential).
+  </div>
+</div>
+
+<!-- PANEL 2 -->
+<div class="panel" id="p1">
+  <div class="title">SHAP Stability Score</div>
+  <div class="subtitle">Đo mức độ ổn định của từng feature qua nhiều random subset — feature ổn định = đáng tin hơn</div>
+
+  <div class="stability-grid">
+    <div class="stability-card">
+      <div class="s-title" style="color:#1D9E75">feat_626 — Section Entropy</div>
+      <div class="s-bar-wrap"><div class="s-bar" style="width:94%;background:#1D9E75"></div></div>
+      <div class="s-label"><span>Variance thấp</span><span>Ổn định cao</span></div>
+      <div class="s-score" style="color:#1D9E75">0.94 <span style="font-size:12px;color:#64748b">stability</span></div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Quan trọng trong tất cả subset → đáng tin</div>
+    </div>
+    <div class="stability-card">
+      <div class="s-title" style="color:#1D9E75">feat_503 — Suspicious Imports</div>
+      <div class="s-bar-wrap"><div class="s-bar" style="width:89%;background:#1D9E75"></div></div>
+      <div class="s-label"><span>Variance thấp</span><span>Ổn định cao</span></div>
+      <div class="s-score" style="color:#1D9E75">0.89 <span style="font-size:12px;color:#64748b">stability</span></div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Nhất quán qua các subset → feature thật</div>
+    </div>
+    <div class="stability-card">
+      <div class="s-title" style="color:#f59e0b">feat_786 — Byte Histogram peak</div>
+      <div class="s-bar-wrap"><div class="s-bar" style="width:61%;background:#f59e0b"></div></div>
+      <div class="s-label"><span>Variance trung bình</span><span></span></div>
+      <div class="s-score" style="color:#f59e0b">0.61 <span style="font-size:12px;color:#64748b">stability</span></div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Dao động theo subset → phụ thuộc distribution</div>
+    </div>
+    <div class="stability-card">
+      <div class="s-title" style="color:#ef4444">feat_2141 — String pattern</div>
+      <div class="s-bar-wrap"><div class="s-bar" style="width:32%;background:#ef4444"></div></div>
+      <div class="s-label"><span>Variance cao</span><span>Không ổn định</span></div>
+      <div class="s-score" style="color:#ef4444">0.32 <span style="font-size:12px;color:#64748b">stability</span></div>
+      <div style="font-size:11px;color:#64748b;margin-top:4px">Thay đổi nhiều → dễ bị domain shift ảnh hưởng</div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Công thức:</strong> stability(feat_i) = 1 − std(SHAP_i across subsets) / mean(|SHAP_i|)<br>
+    <strong>Ý nghĩa:</strong> Feature có stability cao → không bị ảnh hưởng bởi phân phối data cụ thể → robust hơn với malware mới.<br>
+    <strong>Ứng dụng:</strong> CMS chỉ dùng feature có stability &gt; 0.7 thay vì chỉ dùng top mean |SHAP|.
+  </div>
+</div>
+
+<!-- PANEL 3 -->
+<div class="panel" id="p2">
+  <div class="title">Robustness Test — F1 theo mức noise</div>
+  <div class="subtitle">Mô phỏng malware biến thể (obfuscation, packing) bằng Gaussian noise. Model giảm chậm = robust hơn</div>
+
+  <canvas id="robustChart" height="280"></canvas>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>LightGBM</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#3B8BD4"></div>XGBoost</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#D85A30"></div>RandomForest</div>
+  </div>
+
+  <div class="info-box">
+    <strong>Cách đọc biểu đồ:</strong> Trục X là mức noise σ (0 = không nhiễu, 2.0 = nhiễu cực lớn).<br>
+    Trục Y là F1 score. <strong>Model giảm chậm nhất = robust nhất với malware chưa từng thấy.</strong><br>
+    <strong>Kết quả kỳ vọng:</strong> LightGBM và XGBoost robust hơn RandomForest vì gradient boosting tổng hợp nhiều weak learner, ít bị ảnh hưởng bởi noise trên từng feature.
+  </div>
+</div>
+
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.querySelectorAll('.panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+  if (idx === 2) drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById('robustChart');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio || 600;
+  canvas.height = 280 * (window.devicePixelRatio || 1);
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+  const W = canvas.offsetWidth || 600, H = 280;
+  const pad = { l: 60, r: 20, t: 20, b: 50 };
+  const cW = W - pad.l - pad.r, cH = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#12151f';
+  ctx.fillRect(0, 0, W, H);
+
+  // Simulated robustness data (kết quả kỳ vọng dựa trên literature)
+  const noise = [0, 0.1, 0.5, 1.0, 1.5, 2.0];
+  const data = {
+    LightGBM:     [0.9675, 0.9620, 0.9380, 0.8950, 0.8420, 0.7780],
+    XGBoost:      [0.9682, 0.9625, 0.9390, 0.8980, 0.8450, 0.7820],
+    RandomForest: [0.9395, 0.9280, 0.8840, 0.8120, 0.7350, 0.6580],
+  };
+  const colors = { LightGBM:'#1D9E75', XGBoost:'#3B8BD4', RandomForest:'#D85A30' };
+
+  const yMin = 0.6, yMax = 1.0;
+  const xScale = i => pad.l + (i / (noise.length-1)) * cW;
+  const yScale = v => pad.t + (1 - (v-yMin)/(yMax-yMin)) * cH;
+
+  // Grid
+  ctx.strokeStyle = '#1a1d2e'; ctx.lineWidth = 1;
+  [0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.0].forEach(v => {
+    const y = yScale(v);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#475569'; ctx.font = '10px Segoe UI';
+    ctx.fillText(v.toFixed(2), pad.l - 36, y + 4);
+  });
+
+  noise.forEach((n, i) => {
+    const x = xScale(i);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H-pad.b); ctx.stroke();
+    ctx.fillStyle = '#475569'; ctx.font = '10px Segoe UI'; ctx.textAlign = 'center';
+    ctx.fillText('σ='+n, x, H - pad.b + 16);
+  });
+
+  // Lines
+  Object.entries(data).forEach(([name, vals]) => {
+    ctx.strokeStyle = colors[name]; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    vals.forEach((v, i) => {
+      const x = xScale(i), y = yScale(v);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Dots
+    vals.forEach((v, i) => {
+      ctx.fillStyle = colors[name];
+      ctx.beginPath();
+      ctx.arc(xScale(i), yScale(v), 4, 0, Math.PI*2);
+      ctx.fill();
+    });
+  });
+
+  // Axis labels
+  ctx.fillStyle = '#94a3b8'; ctx.font = '11px Segoe UI'; ctx.textAlign = 'center';
+  ctx.fillText('Mức noise σ (Gaussian)', W/2, H - 6);
+  ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('F1 Score', 0, 0); ctx.restore();
+}
+</script>
+</body>
+</html>

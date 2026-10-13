@@ -1,0 +1,15 @@
+=======================================================
+STEP 4: Evaluate Models
+=======================================================
+Log luu tai: results\reports\step4_output.txt
+
+Load test set...
+  X_test: (200000, 2381)
+  Benign: 100,000 | Malware: 100,000
+
+Load models:
+  [OK] LightGBM
+  [OK] XGBoost
+  [OK] RandomForest
+
+Load train set cho stability test...

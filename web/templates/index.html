@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PE Malware Detector</title>
+<style>
+/*  Design tokens 
+   Palette: near-black bg, cold-blue accent, monospace data
+   Aesthetic: security terminal — precision over decoration
+*/
+:root {
+  --bg-base   : #0d0f14;
+  --bg-card   : #141720;
+  --bg-hover  : #1a1e2a;
+  --border    : #252a38;
+  --border-hi : #2e3549;
+  --blue      : #3e8ef7;
+  --blue-dim  : #1f4a8a;
+  --green     : #22c55e;
+  --red       : #ef4444;
+  --amber     : #f59e0b;
+  --text-hi   : #e8eaf0;
+  --text-mid  : #8b93a8;
+  --text-lo   : #4a5066;
+  --mono      : "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
+  --sans      : "Inter", -apple-system, sans-serif;
+  --radius    : 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-hi);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/*  Layout  */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/*  Left panel: upload ─ */
+.panel-left {
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-right {
+  display: flex;
+  flex-direction: column;
+}
+
+/*  Header  */
+.header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 6px;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-hi);
+  letter-spacing: -0.01em;
+}
+
+.header-sub {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-top: 4px;
+}
+
+/*  Upload zone  */
+.upload-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 28px;
+}
+
+.drop-zone {
+  width: 100%;
+  max-width: 380px;
+  border: 1.5px dashed var(--border-hi);
+  border-radius: var(--radius);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--blue);
+  background: rgba(62, 142, 247, 0.04);
+}
+
+.drop-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  opacity: 0.4;
+}
+
+.drop-primary {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-hi);
+  margin-bottom: 6px;
+}
+
+.drop-secondary {
+  font-size: 12px;
+  color: var(--text-mid);
+  margin-bottom: 20px;
+}
+
+.drop-constraints {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-lo);
+}
+
+.file-input {
+  display: none;
+}
+
+.btn-scan {
+  width: 100%;
+  max-width: 380px;
+  margin-top: 20px;
+  padding: 13px 24px;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  letter-spacing: 0.01em;
+}
+
+.btn-scan:hover { background: #5a9ef8; }
+.btn-scan:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.file-selected {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 380px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-mid);
+  display: none;
+}
+
+.file-selected.show { display: flex; align-items: center; gap: 8px; }
+.file-selected .fname { color: var(--text-hi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/*  Right panel: chat log + result ─ */
+.log-header {
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.log-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+.log-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-lo);
+}
+
+.log-status.running { color: var(--amber); }
+.log-status.done    { color: var(--green); }
+.log-status.error   { color: var(--red); }
+
+.chat-log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.chat-log::-webkit-scrollbar { width: 4px; }
+.chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-entry {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+.log-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.badge-phase1  { background: rgba(62,142,247,0.15); color: var(--blue); }
+.badge-phase2  { background: rgba(62,142,247,0.15); color: var(--blue); }
+.badge-model   { background: rgba(34,197,94,0.12);  color: var(--green); }
+.badge-evidence{ background: rgba(245,158,11,0.12); color: var(--amber); }
+.badge-import  { background: rgba(245,158,11,0.12); color: var(--amber); }
+.badge-ai      { background: rgba(139,93,168,0.15); color: #b084cc; }
+.badge-ai_stream{ background: transparent; color: transparent; padding: 0; min-width: 0; }
+.badge-error   { background: rgba(239,68,68,0.12);  color: var(--red); }
+.badge-done    { background: rgba(34,197,94,0.12);  color: var(--green); }
+
+.log-msg {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.ai-text {
+  color: var(--text-hi);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.log-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-lo);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+  gap: 8px;
+}
+
+/*  Result card ─ */
+.result-section {
+  border-top: 1px solid var(--border);
+  padding: 20px 28px;
+  display: none;
+}
+
+.result-section.show { display: block; }
+
+.verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.verdict-badge {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 16px;
+  border-radius: 6px;
+}
+
+.verdict-MALWARE { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.verdict-BENIGN  { background: rgba(34,197,94,0.1);  color: var(--green); border: 1px solid rgba(34,197,94,0.25); }
+
+.confidence-bar-wrap {
+  flex: 1;
+}
+
+.confidence-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.confidence-bar {
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.fill-malware { background: var(--red); }
+.fill-benign  { background: var(--green); }
+
+/*  Evidence grid ─ */
+.evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ev-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.ev-name {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  margin-bottom: 6px;
+}
+
+.ev-value {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ev-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.ev-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/*  Import pattern  */
+.import-hits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hit-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(245,158,11,0.1);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  margin-bottom: 8px;
+}
+
+/*  SHAP section  */
+.shap-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.shap-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.shap-feat  { color: var(--text-mid); width: 90px; flex-shrink: 0; }
+.shap-bar-w { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.shap-bar-f { height: 100%; border-radius: 2px; }
+.shap-pos   { background: var(--red); }
+.shap-neg   { background: var(--green); }
+.shap-val   { color: var(--text-lo); width: 56px; text-align: right; }
+
+/*  Spacing helpers ─ */
+.mb8  { margin-bottom: 8px; }
+.mb14 { margin-bottom: 14px; }
+
+/*  Responsive  */
+@media (max-width: 760px) {
+  .layout { grid-template-columns: 1fr; }
+  .panel-left { border-right: none; border-bottom: 1px solid var(--border); }
+  .evidence-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+  <!--  LEFT — Upload  -->
+  <div class="panel-left">
+    <div class="header">
+      <div class="header-label">Công cụ phát hiện mã độc PE</div>
+      <div class="header-title">Phân tích file thực thi</div>
+      <div class="header-sub">Static analysis · XGBoost · SHAP · MITRE ATT&CK</div>
+    </div>
+
+    <div class="upload-area">
+      <div class="drop-zone" id="dropZone">
+        <!-- File icon -->
+        <svg class="drop-icon" viewBox="0 0 48 48" fill="none">
+          <rect x="8" y="4" width="28" height="40" rx="3"
+                stroke="#3e8ef7" stroke-width="1.5" fill="none"/>
+          <path d="M28 4 L36 12 L28 12 Z"
+                stroke="#3e8ef7" stroke-width="1.5" fill="none"/>
+          <path d="M16 22 L32 22 M16 28 L28 28"
+                stroke="#3e8ef7" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="drop-primary">Kéo thả file .exe / .dll</div>
+        <div class="drop-secondary">hoặc click để chọn file</div>
+        <div class="drop-constraints">PE format · tối đa 50 MB</div>
+        <input type="file" class="file-input" id="fileInput"
+               accept=".exe,.dll,.sys,.ocx,.bin"/>
+      </div>
+
+      <div class="file-selected" id="fileSelected">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="1" width="12" height="12" rx="2"
+                stroke="#3e8ef7" stroke-width="1.2"/>
+          <path d="M4 7l2 2 4-4" stroke="#3e8ef7"
+                stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        <span class="fname" id="selectedName"></span>
+      </div>
+
+      <button class="btn-scan" id="btnScan" disabled
+              onclick="startScan()">
+        Phân tích file
+      </button>
+    </div>
+  </div>
+
+  <!--  RIGHT — Chat log + Result  -->
+  <div class="panel-right">
+    <div class="log-header">
+      <span class="log-title">Nhật ký phân tích</span>
+      <span class="log-status" id="logStatus">—</span>
+    </div>
+
+    <div class="chat-log" id="chatLog">
+      <div class="log-placeholder" id="logPlaceholder">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" opacity="0.3">
+          <circle cx="16" cy="16" r="13" stroke="#8b93a8" stroke-width="1.5"/>
+          <path d="M10 16 l4 4 8-8" stroke="#8b93a8"
+                stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Chọn file để bắt đầu phân tích</span>
+      </div>
+    </div>
+
+    <!-- Result card -->
+    <div class="result-section" id="resultSection">
+
+      <!-- Verdict + confidence -->
+      <div class="verdict-row" id="verdictRow"></div>
+
+      <!-- Evidence -->
+      <div class="mb8 section-label">Vector bằng chứng</div>
+      <div class="evidence-grid mb14" id="evidenceGrid"></div>
+
+      <!-- Import Pattern -->
+      <div id="importSection" style="display:none">
+        <div class="mb8 section-label">Mẫu Import (MITRE ATT&CK)</div>
+        <div class="import-hits mb14" id="importHits"></div>
+      </div>
+
+      <!-- SHAP -->
+      <div id="shapSection" style="display:none">
+        <div class="mb8 section-label">Đặc trưng SHAP hàng đầu</div>
+        <div class="shap-list mb14" id="shapList"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- .layout -->
+
+<script>
+//  State ─
+let selectedFile  = null;
+let currentJobId  = null;
+let evtSource     = null;
+let aiBuffer      = "";    // tích lũy dòng AI stream
+let aiEl          = null;  // element đang render AI text
+
+//  Drop zone 
+const dropZone  = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+
+dropZone.addEventListener("click", () => fileInput.click());
+
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.classList.add("drag-over");
+});
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+
+fileInput.addEventListener("change", () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById("selectedName").textContent = f.name;
+  document.getElementById("fileSelected").classList.add("show");
+  document.getElementById("btnScan").disabled = false;
+}
+
+//  Scan 
+function startScan() {
+  if (!selectedFile) return;
+
+  // Reset UI
+  resetUI();
+  document.getElementById("btnScan").disabled = true;
+  setStatus("running", "Đang phân tích…");
+
+  const form = new FormData();
+  form.append("file", selectedFile);
+
+  fetch("/scan", { method: "POST", body: form })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { showError(data.error); return; }
+      currentJobId = data.job_id;
+      listenStream(currentJobId);
+    })
+    .catch(err => showError(err.toString()));
+}
+
+//  SSE Stream ─
+function listenStream(jobId) {
+  if (evtSource) evtSource.close();
+  evtSource = new EventSource(`/stream/${jobId}`);
+
+  evtSource.onmessage = e => {
+    const entry = JSON.parse(e.data);
+    handleEntry(entry);
+  };
+
+  evtSource.onerror = () => {
+    evtSource.close();
+    setStatus("error", "Kết nối bị ngắt");
+  };
+}
+
+function handleEntry(entry) {
+  const { step, msg, data } = entry;
+
+  if (step === "end") {
+    evtSource.close();
+    const s = entry.status;
+    setStatus(s, s === "done" ? "Hoàn tất" : "Có lỗi");
+    if (s === "done") loadResult(currentJobId);
+    document.getElementById("btnScan").disabled = false;
+    return;
+  }
+
+  if (step === "ai_stream") {
+    // Stream từng dòng AI text vào một block duy nhất
+    if (!aiEl) {
+      aiEl = appendLog("ai", "");
+      aiEl.querySelector(".log-msg").classList.add("ai-text");
+    }
+    const msgEl = aiEl.querySelector(".log-msg");
+    aiBuffer += (aiBuffer ? "\n" : "") + msg;
+    msgEl.innerText = aiBuffer;
+    scrollLog();
+    return;
+  }
+
+  if (step === "ai") {
+    aiEl = appendLog("ai", msg);
+    aiBuffer = "";
+    return;
+  }
+
+  appendLog(step, msg);
+}
+
+function appendLog(step, msg) {
+  const placeholder = document.getElementById("logPlaceholder");
+  if (placeholder) placeholder.remove();
+
+  const log  = document.getElementById("chatLog");
+  const row  = document.createElement("div");
+  row.className = "log-entry";
+
+  const badge = document.createElement("span");
+  badge.className = `log-badge badge-${step}`;
+
+  const labelMap = {
+    phase1: "Giai đoạn 1", phase2: "Giai đoạn 2",
+    model: "Mô hình", evidence: "Bằng chứng",
+    import: "Thư viện", ai: "AI",
+    done: "Hoàn tất", error: "Lỗi",
+  };
+  badge.textContent = labelMap[step] || step;
+
+  const msgEl = document.createElement("span");
+  msgEl.className = "log-msg";
+  msgEl.textContent = msg;
+
+  row.appendChild(badge);
+  row.appendChild(msgEl);
+  log.appendChild(row);
+  scrollLog();
+
+  return row;
+}
+
+function scrollLog() {
+  const log = document.getElementById("chatLog");
+  log.scrollTop = log.scrollHeight;
+}
+
+//  Load full result ─
+function loadResult(jobId) {
+  fetch(`/result/${jobId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.result) return;
+      renderResult(data.result);
+    });
+}
+
+function renderResult(r) {
+  const section = document.getElementById("resultSection");
+  section.classList.add("show");
+
+  // Verdict + confidence
+  const verdict  = r.verdict;
+  const rawScore = r.confidence; // xác suất MALWARE do model trả về (0..1)
+  // Hiển thị "độ tin cậy" theo đúng verdict:
+  // - MALWARE → % xác suất là malware (chính là rawScore)
+  // - BENIGN  → % xác suất là benign  (1 - rawScore)
+  const dispConf = verdict === "MALWARE" ? rawScore : (1 - rawScore);
+  const verdictLabelMap = { MALWARE: "MÃ ĐỘC", BENIGN: "AN TOÀN" };
+  const verdictLabel = verdictLabelMap[verdict] || verdict;
+  const verdictRow = document.getElementById("verdictRow");
+  verdictRow.innerHTML = `
+    <span class="verdict-badge verdict-${verdict}">${verdictLabel}</span>
+    <div class="confidence-bar-wrap">
+      <div class="confidence-label">
+        <span>Độ tin cậy</span>
+        <span>${(dispConf * 100).toFixed(1)}%</span>
+      </div>
+      <div class="confidence-bar">
+        <div class="confidence-fill fill-${verdict.toLowerCase()}"
+             style="width:${dispConf * 100}%"></div>
+      </div>
+    </div>`;
+
+  // Evidence
+  const evGrid = document.getElementById("evidenceGrid");
+  evGrid.innerHTML = "";
+  const EV_LABELS = {
+    packing_evidence : "Đóng gói",
+    tls_evidence     : "TLS",
+    import_evidence  : "Thư viện",
+    header_evidence  : "Tiêu đề",
+    loadcfg_evidence : "Cấu hình tải",
+  };
+  // Δ population-mean ≈ 0 theo báo cáo Step 6 (Evidence Alignment) —
+  // 2 evidence này KHÔNG phân biệt malware/benign ở mức population,
+  // chỉ có giá trị per-sample/SHAP. Hiển thị xám trung tính, không tô
+  // đỏ/vàng/xanh để tránh người dùng không chuyên hiểu sai thành "phát hiện được".
+  const EV_LOW_CONFIDENCE = new Set(["tls_evidence", "header_evidence"]);
+  const ev = r.evidence || {};
+  for (const [k, label] of Object.entries(EV_LABELS)) {
+    const val = ev[k] ?? 0;
+    const pct = Math.round(val * 100);
+    const lowConf = EV_LOW_CONFIDENCE.has(k);
+    const color = lowConf ? "#9ca3af"
+                : val > 0.65 ? "#ef4444"
+                : val > 0.45 ? "#f59e0b"
+                : "#3e8ef7";
+    evGrid.innerHTML += `
+      <div class="ev-cell">
+        <div class="ev-name">${label}${lowConf ? ' <span title="Δ population-mean ≈ 0 — xem hạn chế trong báo cáo" style="cursor:help;color:var(--text-lo)">ⓘ</span>' : ''}</div>
+        <div class="ev-value" style="color:${color}">${pct}<span style="font-size:10px;color:var(--text-lo)">%</span></div>
+        <div class="ev-bar">
+          <div class="ev-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>`;
+  }
+
+  // Import Pattern
+  const ip = r.import_pattern;
+  if (ip && ip.n_categories > 0) {
+    const importSec = document.getElementById("importSection");
+    importSec.style.display = "block";
+    const hitsEl = document.getElementById("importHits");
+    hitsEl.innerHTML = "";
+    for (const [cat, apis] of Object.entries(ip.hits || {})) {
+      const catLabel = cat.replace(/_/g, " ");
+      hitsEl.innerHTML += `<span class="hit-tag">${catLabel}: ${apis.join(", ")}</span>`;
+    }
+  }
+
+  // SHAP
+  const shap = r.shap_top || [];
+  if (shap.length > 0) {
+    const shapSec = document.getElementById("shapSection");
+    shapSec.style.display = "block";
+    const maxAbs = Math.max(...shap.map(s => Math.abs(s.contribution)), 0.01);
+    const shapEl = document.getElementById("shapList");
+    shapEl.innerHTML = shap.map(s => {
+      const pct  = Math.abs(s.contribution) / maxAbs * 100;
+      const cls  = s.contribution > 0 ? "shap-pos" : "shap-neg";
+      const sign = s.contribution > 0 ? "+" : "";
+      return `<div class="shap-row">
+        <span class="shap-feat">${s.feature}</span>
+        <div class="shap-bar-w"><div class="shap-bar-f ${cls}" style="width:${pct}%"></div></div>
+        <span class="shap-val">${sign}${s.contribution.toFixed(3)}</span>
+      </div>`;
+    }).join("");
+  }
+}
+
+//  Helpers ─
+function setStatus(state, text) {
+  const el = document.getElementById("logStatus");
+  el.className = `log-status ${state}`;
+  el.textContent = text;
+}
+
+function showError(msg) {
+  appendLog("error", msg);
+  setStatus("error", "Lỗi");
+  document.getElementById("btnScan").disabled = false;
+}
+
+function resetUI() {
+  aiEl = null;
+  aiBuffer = "";
+  currentJobId = null;
+
+  const log = document.getElementById("chatLog");
+  log.innerHTML = "";
+
+  document.getElementById("resultSection").classList.remove("show");
+  document.getElementById("importSection").style.display = "none";
+  document.getElementById("shapSection").style.display = "none";
+  document.getElementById("verdictRow").innerHTML = "";
+  document.getElementById("evidenceGrid").innerHTML = "";
+  document.getElementById("importHits").innerHTML = "";
+  document.getElementById("shapList").innerHTML = "";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+body { background: transparent; color: #e2e8f0; padding: 16px; }
+
+.title-box {
+  background: linear-gradient(135deg, #1a1f3e, #1a2e1a);
+  border: 1px solid #3B8BD4; border-radius: 10px;
+  padding: 14px 18px; margin-bottom: 16px;
+}
+.title-box .main { font-size: 15px; font-weight: 700; color: #60a5fa; margin-bottom: 4px; }
+.title-box .sub  { font-size: 12px; color: #94a3b8; line-height: 1.6; }
+
+.section { margin-bottom: 16px; }
+.sec-header {
+  font-size: 12px; font-weight: 700; padding: 6px 12px;
+  border-radius: 6px 6px 0 0; margin-bottom: 0;
+}
+.blue-h  { background: #1e3a5f; color: #60a5fa; }
+.green-h { background: #14532d; color: #4ade80; }
+.purple-h{ background: #3b1f6e; color: #c084fc; }
+.orange-h{ background: #7c2d12; color: #fb923c; }
+
+.items {
+  border: 1px solid #2d3148; border-top: none;
+  border-radius: 0 0 6px 6px; overflow: hidden;
+}
+.item {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 10px 14px; border-bottom: 1px solid #1a1d2e;
+  background: #12151f;
+}
+.item:last-child { border: none; }
+.item-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  font-size: 11px; font-weight: 700; color: white;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.bn { background: #3B8BD4; }
+.gn { background: #1D9E75; }
+.pn { background: #9333ea; }
+.on { background: #ea580c; }
+
+.item-content { flex: 1; }
+.item-title { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.item-sub { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+.tag {
+  display: inline-block; padding: 1px 6px; border-radius: 3px;
+  font-size: 10px; font-weight: 700; margin-left: 6px;
+}
+.t-done { background: #14532d; color: #86efac; }
+.t-next { background: #1e3a5f; color: #93c5fd; }
+.t-web  { background: #3b1f6e; color: #c084fc; }
+
+.rq-box {
+  background: #0f1117; border: 1px solid #f59e0b;
+  border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+}
+.rq-label { font-size: 11px; color: #f59e0b; font-weight: 700; margin-bottom: 6px; }
+.rq-text  { font-size: 13px; color: #e2e8f0; line-height: 1.6; font-style: italic; }
+
+.timeline {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-top: 16px;
+}
+.tl-card {
+  background: #12151f; border-radius: 8px; padding: 10px 12px;
+  border-top: 3px solid;
+}
+.tl-period { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+.tl-title  { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.tl-items  { font-size: 11px; color: #94a3b8; line-height: 1.6; }
+.done-card { border-color: #1D9E75; }
+.next-card { border-color: #3B8BD4; }
+.web-card  { border-color: #9333ea; }
+.rep-card  { border-color: #ea580c; }
+</style>
+</head>
+<body>
+
+<!-- Research Question -->
+<div class="rq-box">
+  <div class="rq-label">Research Question chính thức</div>
+  <div class="rq-text">
+    "Liệu một framework kết hợp SHAP-Consensus feature selection, CMS-XGBoost với top stable features,
+    Youden's J threshold optimization và PE Structural Anomaly Score có cải thiện đồng thời
+    F1, FPR và khả năng giải thích so với XGBoost baseline trên EMBER 2018 không?"
+  </div>
+</div>
+
+<!-- Tiêu đề đề tài -->
+<div class="title-box">
+  <div class="main">Xây dựng hệ thống phát hiện mã độc PE dựa trên đặc trưng tĩnh, học máy và phân tích giải thích được</div>
+  <div class="sub">
+    Không tạo thuật toán mới — Nâng cấp có hệ thống từ baseline → kết hợp chưa ai thử → chứng minh bằng số liệu cụ thể
+  </div>
+</div>
+
+<!-- Hướng 1 -->
+<div class="section">
+  <div class="sec-header blue-h">Hướng 1 — Nâng cấp ML pipeline (đã có số liệu)</div>
+  <div class="items">
+    <div class="item">
+      <div class="item-num bn">1</div>
+      <div class="item-content">
+        <div class="item-title">3 model baseline với 5-fold CV nghiêm túc <span class="tag t-done">XONG</span></div>
+        <div class="item-sub">XGBoost F1=0.9682, AUC=0.9938 · LightGBM F1=0.9675 · RF F1=0.9395 · Holdout std &lt;0.001</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num bn">2</div>
+      <div class="item-content">
+        <div class="item-title">Youden's J threshold optimization <span class="tag t-done">XONG</span></div>
+        <div class="item-sub">XGBoost tau*=0.627 → FPR giảm 43% (3.59%→2.05%) · Cải tiến có chứng minh, paper gốc không làm</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num bn">3</div>
+      <div class="item-content">
+        <div class="item-title">CMS-XGBoost với top-20 SHAP consensus features <span class="tag t-next">BƯỚC TIẾP</span></div>
+        <div class="item-sub">Thay CMS-LR (F1=0.771) bằng XGBoost non-linear · Kỳ vọng F1~0.92 với 99% giảm số features</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hướng 2 -->
+<div class="section">
+  <div class="sec-header green-h">Hướng 2 — Kết hợp chưa ai thử trên PE malware</div>
+  <div class="items">
+    <div class="item">
+      <div class="item-num gn">4</div>
+      <div class="item-content">
+        <div class="item-title">SHAP Consensus — 6 features nhất quán cả 3 model <span class="tag t-done">XONG</span></div>
+        <div class="item-sub">feat_637, feat_2359 rank 1-2 trong LGB+XGB · Overlap 30% → model-agnostic feature set</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num gn">5</div>
+      <div class="item-content">
+        <div class="item-title">Map feature index → PE field thật <span class="tag t-next">BƯỚC TIẾP</span></div>
+        <div class="item-sub">feat_637/2359 thuộc nhóm histogram/entropy/section/imports? → giải thích được trên web và báo cáo</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num gn">6</div>
+      <div class="item-content">
+        <div class="item-title">PE Structural Anomaly Score <span class="tag t-next">STEP 6</span></div>
+        <div class="item-sub">Entropy &gt;7.2 · RWX section · Suspicious API · Timestamp giả · Kết hợp với ML score = Final Score 2 lớp</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hướng 3 -->
+<div class="section">
+  <div class="sec-header purple-h">Hướng 3 — Robustness với domain shift</div>
+  <div class="items">
+    <div class="item">
+      <div class="item-num pn">7</div>
+      <div class="item-content">
+        <div class="item-title">Gaussian noise robustness test <span class="tag t-next">STEP 6</span></div>
+        <div class="item-sub">σ=0.1→2.0 · Model nào F1 giảm chậm nhất = robust nhất với malware biến thể · So sánh 3 model</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num pn">8</div>
+      <div class="item-content">
+        <div class="item-title">SHAP Stability Score <span class="tag t-next">STEP 6</span></div>
+        <div class="item-sub">variance SHAP qua 5 subset · Feature ổn định = ít bị domain shift · CMS dùng stable features</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Web -->
+<div class="section">
+  <div class="sec-header orange-h">Sản phẩm — Web demo end-to-end</div>
+  <div class="items">
+    <div class="item">
+      <div class="item-num on">9</div>
+      <div class="item-content">
+        <div class="item-title">Upload PE → Chat log real-time <span class="tag t-web">WEB</span></div>
+        <div class="item-sub">Phase 1 validate → Phase 2 extract 2381 features → XGBoost predict tau*=0.627 → SHAP explain → PE anomaly flags</div>
+      </div>
+    </div>
+    <div class="item">
+      <div class="item-num on">10</div>
+      <div class="item-content">
+        <div class="item-title">Diễn giải từng bước cho giám khảo <span class="tag t-web">WEB</span></div>
+        <div class="item-sub">"File này malware vì: feat_637 cao bất thường (section entropy 7.8), import VirtualAlloc+CreateRemoteThread"</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="timeline">
+  <div class="tl-card done-card">
+    <div class="tl-period">2/6 – 5/6 · XONG</div>
+    <div class="tl-title" style="color:#1D9E75">Training Pipeline</div>
+    <div class="tl-items">
+      Step 1: Vectorize<br>
+      Step 2: Split+Scale<br>
+      Step 3: Train CV<br>
+      Step 4: Youden's J<br>
+      Step 5: SHAP+CMS
+    </div>
+  </div>
+  <div class="tl-card next-card">
+    <div class="tl-period">6/6 – 10/6</div>
+    <div class="tl-title" style="color:#3B8BD4">Cải tiến</div>
+    <div class="tl-items">
+      Map feat→PE field<br>
+      CMS-XGBoost<br>
+      SHAP Stability<br>
+      Robustness test<br>
+      PE Anomaly Score
+    </div>
+  </div>
+  <div class="tl-card web-card">
+    <div class="tl-period">11/6 – 22/6</div>
+    <div class="tl-title" style="color:#9333ea">Web Demo</div>
+    <div class="tl-items">
+      Flask backend<br>
+      Upload+validate<br>
+      Chat log real-time<br>
+      SHAP explain<br>
+      PE anomaly display
+    </div>
+  </div>
+  <div class="tl-card rep-card">
+    <div class="tl-period">23/6 – 1/7</div>
+    <div class="tl-title" style="color:#ea580c">Báo cáo</div>
+    <div class="tl-items">
+      Viết báo cáo<br>
+      Bảng so sánh<br>
+      Phân tích SHAP<br>
+      Slide demo<br>
+      Buffer fix
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+flask>=3.0.0
+numpy>=2.0.0
+joblib>=1.3.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+shap>=0.44.0
+
+# lief: pin phiên bản nào cũng sẽ KHÁC lief 0.9.0 mà EMBER 2018 gốc dùng để
+# tạo dataset. Dự án này đã tự patch ember/features.py để chạy được với lief
+# mới hơn (xem 01_pipeline_steps.md - Step 1), kết quả là 2381 feature thay vì
+# 2351. Đây là lựa chọn đã được ghi nhận và chấp nhận trong báo cáo, không phải
+# lỗi cấu hình - chỉ cần biết để không thắc mắc khi version lief khác máy training.
+lief>=0.14.0
+
+# lightgbm: KHÔNG được app.py dùng trực tiếp, nhưng ember/__init__.py tự
+# "import lightgbm" ngay khi import ember.features - thiếu dòng này sẽ
+# ModuleNotFoundError dù bạn chỉ cần features.py. Đã verify thật trong venv.
+lightgbm>=4.0.0
+
+# ember không có trên PyPI - phải cài từ source theo đúng hướng dẫn gốc của
+# elastic/ember (clone + setup.py install), pip không tự làm bước build này.
+-e git+https://github.com/elastic/ember.git#egg=ember

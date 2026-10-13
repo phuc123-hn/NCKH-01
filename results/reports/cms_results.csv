@@ -1,0 +1,3 @@
+method,f1,auc
+XGBoost full (2381),0.9642,0.9951
+CMS top-20 SHAP,0.7708,0.8532
